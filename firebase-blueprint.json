@@ -1,0 +1,189 @@
+{
+  "entities": {
+    "users": {
+      "title": "User",
+      "description": "User profile and settings.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin", "creator", "seller"] },
+        "trustScore": { "type": "number" },
+        "earnings": { "type": "number" },
+        "followersCount": { "type": "number" },
+        "followingCount": { "type": "number" },
+        "xp": { "type": "number" },
+        "level": { "type": "number" },
+        "isPrivate": { "type": "boolean" },
+        "isVerified": { "type": "boolean" },
+        "badges": { "type": "array", "items": { "type": "string" } },
+        "links": { "type": "array", "items": { "type": "object" } },
+        "addresses": { "type": "array", "items": { "type": "object" } },
+        "wishlist": { "type": "array", "items": { "type": "string" } },
+        "cart": { "type": "array", "items": { "type": "object" } },
+        "blockedUsers": { "type": "array", "items": { "type": "string" } },
+        "closeFriends": { "type": "array", "items": { "type": "string" } },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "screenTime": { "type": "number" }
+      },
+      "required": ["uid", "email"]
+    },
+    "posts": {
+      "title": "Post",
+      "description": "Social media post (reels/images).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "type": { "type": "string", "enum": ["image", "video", "text", "carousel", "poll", "qa"] },
+        "content": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "mediaUrls": { "type": "array", "items": { "type": "string" } },
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "sharesCount": { "type": "number" },
+        "viewsCount": { "type": "number" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "hashtags": { "type": "array", "items": { "type": "string" } },
+        "taggedProducts": { "type": "array", "items": { "type": "string" } },
+        "isPremium": { "type": "boolean" },
+        "price": { "type": "number" },
+        "pollOptions": { "type": "array", "items": { "type": "object" } },
+        "status": { "type": "string", "enum": ["draft", "published", "scheduled"] },
+        "scheduledFor": { "type": "string", "format": "date-time" },
+        "aiEnhanced": { "type": "boolean" },
+        "subtitles": { "type": "array", "items": { "type": "object" } },
+        "location": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "type", "createdAt"]
+    },
+    "stories": {
+      "title": "Story",
+      "description": "24-hour disappearing content.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "type": { "type": "string", "enum": ["image", "video"] },
+        "viewers": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "imageUrl", "expiresAt"]
+    },
+    "products": {
+      "title": "Product",
+      "description": "E-commerce product.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "stock": { "type": "number" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "trending": { "type": "boolean" },
+        "affiliateCommission": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "name", "price"]
+    },
+    "orders": {
+      "title": "Order",
+      "description": "E-commerce order.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "sellerIds": { "type": "array", "items": { "type": "string" } },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paid", "shipped", "delivered", "cancelled"] },
+        "paymentMethod": { "type": "string", "enum": ["COD", "Online"] },
+        "shippingAddress": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "items", "totalAmount", "status"]
+    },
+    "chats": {
+      "title": "Chat",
+      "description": "Chat message.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "video", "file", "voice"] },
+        "reactions": { "type": "object" },
+        "isDisappearing": { "type": "boolean" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "receiverId", "createdAt"]
+    },
+    "notifications": {
+      "title": "Notification",
+      "description": "In-app notification.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["like", "comment", "follow", "order", "mention", "system", "gift"] },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "data": { "type": "object" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "title", "body"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "users",
+      "description": "User profiles."
+    },
+    "/posts/{postId}": {
+      "schema": "posts",
+      "description": "Social media posts."
+    },
+    "/stories/{storyId}": {
+      "schema": "stories",
+      "description": "User stories."
+    },
+    "/products/{productId}": {
+      "schema": "products",
+      "description": "Marketplace products."
+    },
+    "/orders/{orderId}": {
+      "schema": "orders",
+      "description": "Customer orders."
+    },
+    "/chats/{chatId}": {
+      "schema": "chats",
+      "description": "Direct messages."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "notifications",
+      "description": "User notifications."
+    }
+  }
+}

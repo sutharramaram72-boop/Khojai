@@ -1,0 +1,167 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Fields: uid, displayName, email, photoURL, bio, role, trustScore, earnings, followersCount, followingCount, addresses, wishlist, cart, createdAt
+    //
+    // Collection: posts
+    // Fields: id, authorId, authorName, authorPhoto, type, content, mediaUrl, likesCount, commentsCount, createdAt
+    //
+    // Collection: products
+    // Fields: id, sellerId, sellerName, name, description, price, imageUrl, category, stock, rating, reviewsCount, trending, createdAt
+    //
+    // Collection: products/{productId}/reviews
+    // Fields: id, userId, userName, userAvatar, rating, comment, createdAt
+    //
+    // Collection: orders
+    // Fields: id, buyerId, sellerIds, items, totalAmount, status, paymentMethod, shippingAddress, createdAt
+    //
+    // Collection: chats
+    // Fields: id, senderId, receiverId, text, mediaUrl, createdAt
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+    function isAuthor() {
+      return isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+    function isSeller() {
+      return isAuthenticated() && request.auth.uid == resource.data.sellerId;
+    }
+    function isBuyer() {
+      return isAuthenticated() && request.auth.uid == resource.data.buyerId;
+    }
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "ramaramsuthar2573@gmail.com" && request.auth.token.email_verified == true));
+    }
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // Domain Validators
+    function isValidUser(data) {
+      return data.uid is string && data.email is string && isValidEmail(data.email) &&
+             (data.displayName is string || !('displayName' in data)) &&
+             (data.photoURL is string || !('photoURL' in data)) &&
+             (data.bio is string || !('bio' in data)) &&
+             (data.role in ['user', 'admin', 'creator', 'seller']) &&
+             (data.trustScore is number) &&
+             (data.earnings is number) &&
+             (data.followersCount is number) &&
+             (data.followingCount is number) &&
+             (data.addresses is list) &&
+             (data.wishlist is list) &&
+             (data.cart is list);
+    }
+
+    function isValidPost(data) {
+      return data.authorId is string && data.type in ['image', 'video', 'text'] &&
+             (data.content is string || !('content' in data)) &&
+             (data.mediaUrl is string || !('mediaUrl' in data)) &&
+             (data.likesCount is number) &&
+             (data.commentsCount is number);
+    }
+
+    function isValidProduct(data) {
+      return data.sellerId is string && data.name is string && data.price is number &&
+             (data.description is string || !('description' in data)) &&
+             (data.imageUrl is string || !('imageUrl' in data)) &&
+             (data.category is string || !('category' in data)) &&
+             (data.stock is number) &&
+             (data.rating is number) &&
+             (data.reviewsCount is number);
+    }
+
+    function isValidReview(data) {
+      return data.userId is string && data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() > 0;
+    }
+
+    function isValidOrder(data) {
+      return data.buyerId is string && data.items is list && data.totalAmount is number &&
+             data.status in ['pending', 'paid', 'shipped', 'delivered', 'cancelled'] &&
+             data.paymentMethod in ['COD', 'Online'] &&
+             data.shippingAddress is map;
+    }
+
+    function isValidChat(data) {
+      return data.senderId is string && data.receiverId is string &&
+             (data.text is string || !('text' in data)) &&
+             (data.mediaUrl is string || !('mediaUrl' in data));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'user';
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && 
+                    (request.resource.data.role == resource.data.role || isAdmin() || (resource.data.role == 'user' && request.resource.data.role == 'seller'));
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authorId && isValidPost(request.resource.data);
+      allow update: if (isAuthor() || isAdmin()) && isValidPost(request.resource.data);
+      allow delete: if isAuthor() || isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.sellerId && isValidProduct(request.resource.data);
+      allow update: if (isSeller() || isAdmin()) && isValidProduct(request.resource.data);
+      allow delete: if isSeller() || isAdmin();
+
+      match /reviews/{reviewId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidReview(request.resource.data);
+        allow update, delete: if (isAuthenticated() && request.auth.uid == resource.data.userId) || isAdmin();
+      }
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.buyerId || request.auth.uid in resource.data.sellerIds);
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.buyerId && isValidOrder(request.resource.data);
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == resource.data.buyerId && request.resource.data.status == 'cancelled') ||
+        (request.auth.uid in resource.data.sellerIds && isValidOrder(request.resource.data)) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.senderId && isValidChat(request.resource.data);
+      allow update: if false; // Chats are immutable for now
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+    }
+  }
+}

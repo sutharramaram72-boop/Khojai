@@ -1,0 +1,5 @@
+{
+  "name": "KhojAI",
+  "description": "Premium All-in-One Super App: Social, E-commerce, AI Assistant, and Earning Platform.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"]
+}
